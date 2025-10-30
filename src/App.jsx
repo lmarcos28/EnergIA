@@ -257,6 +257,38 @@ export default function App(){
           <div style={{marginTop:8, ...S.muted}}>Opcionales: <code>pv_kwh</code>, <code>price_eur_per_kwh</code>. Coma o punto y coma.</div>
         </div>
 
+        {/* NUEVA SECCIÓN: SUBIDA DE DOCUMENTACIÓN (usa /api/upload) */}
+        <div style={S.card}>
+          <h3 style={{marginTop:0}}>Subir documentación (facturas, CSVs, fotos, informes)</h3>
+          <p style={{fontSize:12, opacity:.7, marginTop:-6}}>Puedes subir varios archivos a la vez. Quedan guardados de forma segura.</p>
+
+          <input
+            type="file"
+            multiple
+            accept=".pdf,.csv,.jpg,.jpeg,.png,.doc,.docx"
+            style={S.input}
+            onChange={async (e) => {
+              const files = Array.from(e.target.files || []);
+              if (!files.length) return;
+              const formData = new FormData();
+              files.forEach(f => formData.append("files", f));
+
+              try {
+                const res = await fetch("/api/upload", { method: "POST", body: formData });
+                const data = await res.json();
+                if (data?.ok) {
+                  alert("📦 Documentos subidos correctamente:\n" + (data.urls || []).join("\n"));
+                } else {
+                  alert("Error subiendo archivos");
+                }
+              } catch (err) {
+                alert("Error de red subiendo archivos");
+              }
+            }}
+          />
+          <div style={{...S.muted, marginTop:6}}>Consejo: sube también tu última factura para estimar €/kWh.</div>
+        </div>
+
         {/* DASHBOARD */}
         <div id="dashboard" style={S.card}>
           {!kpis ? (
