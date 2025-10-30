@@ -5,19 +5,31 @@ import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 
 const S = {
-  page:{minHeight:"100vh",background:"linear-gradient(180deg,#ffffff, #f3f6fb)",padding:"24px",fontFamily:"Inter,system-ui,Segoe UI,Roboto,Helvetica,Arial"},
+  page:{minHeight:"100vh",background:"#ffffff",padding:"0 24px 24px",fontFamily:"Inter,system-ui,Segoe UI,Roboto,Helvetica,Arial",color:"#111"},
   container:{maxWidth:"1100px",margin:"0 auto"},
-  header:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"16px"},
-  h1:{fontSize:"26px",fontWeight:800,letterSpacing:"-0.02em",margin:0},
+  header:{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"16px 0"},
+  brand:{fontSize:"22px",fontWeight:800,letterSpacing:"-0.02em"},
   button:{padding:"10px 14px",borderRadius:"14px",border:"1px solid #d0d7de",background:"#fff",cursor:"pointer",fontWeight:600,boxShadow:"0 1px 6px rgba(0,0,0,.05)"},
+  buttonPrimary:{padding:"12px 18px",borderRadius:"16px",border:"0",background:"#0E8A5F",color:"#fff",cursor:"pointer",fontWeight:700,boxShadow:"0 6px 20px rgba(14,138,95,.25)"},
+  buttonGhost:{padding:"12px 18px",borderRadius:"16px",border:"1px solid rgba(17,17,17,.15)",background:"transparent",cursor:"pointer",fontWeight:700},
+  heroWrap:{
+    background:"linear-gradient(135deg,#3DDC84 0%,#1FBF78 45%,#0E8A5F 100%)",
+    borderRadius:"28px",
+    padding:"40px 28px",
+    color:"#0b1f16",
+    boxShadow:"0 10px 40px rgba(14,138,95,.25)",
+    margin:"16px 0 28px"
+  },
+  heroInner:{maxWidth:"880px"},
+  heroTitle:{fontSize:"38px",lineHeight:1.1,letterSpacing:"-0.02em",fontWeight:900,margin:"0 0 10px"},
+  heroSub:{fontSize:"18px",opacity:.95,margin:"0 0 18px"},
+  heroCTAs:{display:"flex",gap:12,flexWrap:"wrap"},
   card:{background:"#fff",border:"1px solid #e6e8ef",borderRadius:"18px",boxShadow:"0 2px 14px rgba(0,0,0,0.06)",padding:"16px",marginBottom:"16px"},
   label:{display:"block",fontSize:"12px",opacity:.7,marginBottom:"6px"},
   input:{padding:"10px",borderRadius:"12px",border:"1px solid #d0d7de",width:"100%"},
   grid:{display:"grid",gap:"12px"},
   grid2:{display:"grid",gap:"16px",gridTemplateColumns:"repeat(auto-fit,minmax(320px,1fr))"},
   metrics:{display:"grid",gap:"12px",gridTemplateColumns:"repeat(auto-fit,minmax(180px,1fr))"},
-  metricTitle:{fontSize:"11px",textTransform:"uppercase",opacity:.7},
-  metricValue:{fontSize:"22px",fontWeight:800,marginTop:"4px"},
   muted:{fontSize:"12px",opacity:.7}
 };
 
@@ -104,7 +116,7 @@ function computeKPIs(rows, areaM2){
 
 function downloadPDF(site, kpis){
   const doc = new jsPDF({ unit: "pt" });
-  const title = `Informe energético – ${site.name || "EnergIA"}`;
+  const title = `Informe energético – ${site.name || "ENERGIA Analytics"}`;
   doc.setFontSize(18);
   doc.text(title, 40, 40);
   doc.setFontSize(12);
@@ -136,7 +148,7 @@ function downloadPDF(site, kpis){
   if (!recs.length) recs.push("Operación correcta. Mantener horarios y revisar trimestralmente.");
   autoTable(doc, { head: [["Prioridad", "Medida"]], body: recs.map((r,i)=>[i+1, r]), startY: 60 });
 
-  doc.save(`informe_energetico_${(site.name||"EnergIA").replace(/\s+/g,'_')}.pdf`);
+  doc.save(`informe_energetico_${(site.name||"ENERGIA").replace(/\s+/g,'_')}.pdf`);
 }
 
 function FileDrop({ onFile }){
@@ -157,7 +169,7 @@ function FileDrop({ onFile }){
 export default function App(){
   const [rows, setRows] = useState([]);
   const [areaM2, setAreaM2] = useState(0);
-  const [siteName, setSiteName] = useState("EnergIA");
+  const [siteName, setSiteName] = useState("ENERGIA Analytics");
 
   const kpis = useMemo(()=> computeKPIs(rows, areaM2), [rows, areaM2]);
 
@@ -166,44 +178,63 @@ export default function App(){
   return (
     <div style={S.page}>
       <div style={S.container}>
-        {/* ===== HEADER con branding + botones ===== */}
+        {/* HEADER */}
         <div style={S.header}>
-          <h1 style={S.h1}>🔧 ENERGIA <span style={{fontWeight:600}}> | Auditor Energético Automático 🏭</span></h1>
-          <div style={{display:"flex", gap:8, flexWrap:"wrap"}}>
+          <div style={S.brand}>ENERGIA Analytics</div>
+          <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
             <button style={S.button} onClick={()=>{
-              // Datos sintéticos de ejemplo (48 horas)
-              const now = new Date();
-              const start = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-              const rows = Array.from({length:48}, (_,i)=>{
-                const dt = new Date(start.getTime() + i*3600*1000);
-                const h = dt.getHours();
-                const pv = Math.max(0, 3*Math.exp(-((h-13)**2)/(2*3.5**2)) + (Math.random()*0.2-0.1));
-                const base = 0.6 + 0.15*Math.sin(h/24*2*Math.PI);
-                const morning = 0.8*Math.exp(-((h-9)**2)/(2*2));
-                const evening = 1.2*Math.exp(-((h-20)**2)/(2*2.5));
-                const load = Math.max(0.3, base+morning+evening + (Math.random()*0.2-0.1));
-                const price = 0.14 + (h>=19&&h<=23?0.08:0) + (h>=2&&h<=5?-0.03:0) + (Math.random()*0.01-0.005);
-                return { datetime: dt, load_kwh: +load.toFixed(3), pv_kwh: +pv.toFixed(3), price_eur_per_kwh: +price.toFixed(3)};
-              });
-              setRows(rows);
-            }}>Cargar datos de ejemplo</button>
-
-            <button style={S.button} onClick={()=>{
-              const el = document.getElementById("instaladores");
+              const el = document.getElementById("upload");
               if (el) el.scrollIntoView({behavior:"smooth"});
-            }}>Panel instaladores</button>
-
+            }}>Subir datos</button>
             <a
-              href="mailto:online.lmg28@gmail.com?subject=Solicitud%20de%20acceso%20EnergIA&body=Hola%2C%20quiero%20probar%20EnergIA%20para%20mis%20clientes.%20Empresa%3A%20___%20%7C%20N%C2%BA%20instalaciones%20al%20a%C3%B1o%3A%20___"
-              style={{...S.button, textDecoration:"none", display:"inline-block"}}
-            >
-              Solicitar acceso
-            </a>
+              href="mailto:online.lmg28@gmail.com?subject=Demo%20ENERGIA%20Analytics&body=Hola%2C%20quiero%20una%20demo%20con%20mis%20datos."
+              style={{...S.buttonGhost, textDecoration:"none"}}
+            >Solicitar demo</a>
           </div>
         </div>
 
-        {/* ===== FORM / INGESTA ===== */}
-        <div style={S.card}>
+        {/* HERO PREMIUM (DEGRADADO) */}
+        <section style={S.heroWrap}>
+          <div style={S.heroInner}>
+            <h1 style={S.heroTitle}>Optimización Energética Inteligente para Edificios e Instalaciones</h1>
+            <p style={S.heroSub}>
+              Reduce el coste energético con análisis automático, detección de ineficiencias y recomendaciones accionables.
+              Informes profesionales listos para compartir con tus clientes.
+            </p>
+            <div style={S.heroCTAs}>
+              <button style={S.buttonPrimary} onClick={()=>{
+                const el = document.getElementById("upload");
+                if (el) el.scrollIntoView({behavior:"smooth"});
+              }}>Subir datos ahora</button>
+              <button style={S.button} onClick={()=>{
+                // Datos sintéticos de ejemplo (48 horas)
+                const now = new Date();
+                const start = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+                const rows = Array.from({length:48}, (_,i)=>{
+                  const dt = new Date(start.getTime() + i*3600*1000);
+                  const h = dt.getHours();
+                  const pv = Math.max(0, 3*Math.exp(-((h-13)**2)/(2*3.5**2)) + (Math.random()*0.2-0.1));
+                  const base = 0.6 + 0.15*Math.sin(h/24*2*Math.PI);
+                  const morning = 0.8*Math.exp(-((h-9)**2)/(2*2));
+                  const evening = 1.2*Math.exp(-((h-20)**2)/(2*2.5));
+                  const load = Math.max(0.3, base+morning+evening + (Math.random()*0.2-0.1));
+                  const price = 0.14 + (h>=19&&h<=23?0.08:0) + (h>=2&&h<=5?-0.03:0) + (Math.random()*0.01-0.005);
+                  return { datetime: dt, load_kwh: +load.toFixed(3), pv_kwh: +pv.toFixed(3), price_eur_per_kwh: +price.toFixed(3)};
+                });
+                setRows(rows);
+                const el = document.getElementById("dashboard");
+                if (el) el.scrollIntoView({behavior:"smooth"});
+              }}>Ver demo instantánea</button>
+              <a
+                href="mailto:online.lmg28@gmail.com?subject=Demo%20ENERGIA%20Analytics&body=Hola%2C%20quiero%20una%20demo%20con%20mis%20datos."
+                style={{...S.buttonGhost, textDecoration:"none"}}
+              >Solicitar demo personalizada</a>
+            </div>
+          </div>
+        </section>
+
+        {/* FORM / INGESTA */}
+        <div id="upload" style={S.card}>
           <div style={S.grid}>
             <div>
               <label style={S.label}>Nombre del sitio</label>
@@ -216,7 +247,7 @@ export default function App(){
           </div>
         </div>
 
-        {/* ===== CSV UPLOAD ===== */}
+        {/* CSV UPLOAD */}
         <div style={S.card}>
           <div style={{marginBottom:8, ...S.muted}}>Sube tu CSV (mínimo: <code>datetime, load_kwh</code>)</div>
           <FileDrop onFile={async(f)=>{
@@ -226,10 +257,10 @@ export default function App(){
           <div style={{marginTop:8, ...S.muted}}>Opcionales: <code>pv_kwh</code>, <code>price_eur_per_kwh</code>. Coma o punto y coma.</div>
         </div>
 
-        {/* ===== DASHBOARD ===== */}
-        <div style={S.card}>
+        {/* DASHBOARD */}
+        <div id="dashboard" style={S.card}>
           {!kpis ? (
-            <div style={S.muted}>Sube datos o usa “Cargar datos de ejemplo” para ver el dashboard.</div>
+            <div style={S.muted}>Sube datos o usa “Ver demo instantánea” para ver el dashboard.</div>
           ):(
             <>
               <div style={S.metrics}>
@@ -280,71 +311,58 @@ export default function App(){
           )}
         </div>
 
-        {/* ===== PDF ===== */}
+        {/* PDF */}
         <div style={S.card}>
           {!kpis ? (
-            <div style={S.muted}>Sube datos o usa los datos de ejemplo para generar el PDF.</div>
+            <div style={S.muted}>Sube datos o usa la demo para generar el PDF.</div>
           ):(
             <>
               <div style={S.muted}>Genera un informe PDF profesional con KPIs y recomendaciones automáticas.</div>
-              <button style={S.button} onClick={()=>downloadPDF({ name: siteName||"EnergIA", areaM2, period: "según datos" }, kpis)}>
+              <button style={S.button} onClick={()=>downloadPDF({ name: siteName||"ENERGIA Analytics", areaM2, period: "según datos" }, kpis)}>
                 Descargar informe PDF
               </button>
             </>
           )}
         </div>
 
-        {/* ===== LANDING INSTALADORES ===== */}
+        {/* INSTALADORES */}
         <div id="instaladores" style={{...S.card, marginTop:24}}>
-          <h2 style={{marginTop:0}}>Panel para instaladores</h2>
+          <h2 style={{marginTop:0}}>Para instaladores y mantenimiento</h2>
           <p style={S.muted}>
-            Servicio profesional para instaladores solares y de climatización. Dashboard automático + informe PDF mensual
-            listo para enviar al cliente. Marca blanca disponible.
+            Servicio profesional post-instalación. Dashboard automático + informe mensual en PDF para tus clientes.
+            Marca blanca disponible.
           </p>
 
           <ul style={{margin:"8px 0 12px 18px"}}>
-            <li>🔧 Reduce soporte post-instalación (el informe responde dudas).</li>
-            <li>🏭 Detecta consumos fuera de horario y oportunidades de ahorro.</li>
-            <li>☀️ Calcula autoconsumo, excedentes y recomendación de batería.</li>
-            <li>📄 PDF mensual automático con KPIs y acciones recomendadas.</li>
-            <li>💶 Nuevo ingreso recurrente por cliente (tu servicio post-venta).</li>
+            <li>Reduce soporte post-venta con informes claros.</li>
+            <li>Detecta consumos fuera de horario y oportunidades de ahorro.</li>
+            <li>Calcula autoconsumo, excedentes y recomendación de batería.</li>
+            <li>Nuevo ingreso recurrente por instalación.</li>
           </ul>
 
           <div style={{display:"grid", gap:12, gridTemplateColumns:"repeat(auto-fit,minmax(220px,1fr))"}}>
-            <div style={{border:"1px solid #e6e8ef", borderRadius:12, padding:12}}>
-              <div style={{fontWeight:700}}>Starter</div>
-              <div style={{...S.muted}}>Hasta 10 clientes</div>
-              <div style={{fontSize:22, fontWeight:800, margin:"6px 0"}}>49 €/mes</div>
-            </div>
-            <div style={{border:"1px solid #e6e8ef", borderRadius:12, padding:12}}>
-              <div style={{fontWeight:700}}>Pro</div>
-              <div style={{...S.muted}}>Hasta 50 clientes</div>
-              <div style={{fontSize:22, fontWeight:800, margin:"6px 0"}}>99 €/mes</div>
-            </div>
-            <div style={{border:"1px solid #e6e8ef", borderRadius:12, padding:12}}>
-              <div style={{fontWeight:700}}>Partner</div>
-              <div style={{...S.muted}}>Hasta 200 clientes</div>
-              <div style={{fontSize:22, fontWeight:800, margin:"6px 0"}}>199 €/mes</div>
-            </div>
+            <Plan name="Starter" users="Hasta 10 clientes" price="49 €/mes"/>
+            <Plan name="Pro" users="Hasta 50 clientes" price="99 €/mes"/>
+            <Plan name="Partner" users="Hasta 200 clientes" price="199 €/mes"/>
           </div>
 
           <div style={{marginTop:14, display:"flex", gap:8, flexWrap:"wrap"}}>
             <a
-              href="mailto:online.lmg28@gmail.com?subject=Alta%20instalador%20EnergIA&body=Empresa%3A%20___%0AContacto%3A%20___%0AN%C2%BA%20clientes%20activos%3A%20___"
+              href="mailto:online.lmg28@gmail.com?subject=Alta%20instalador%20ENERGIA%20Analytics&body=Empresa%3A%20___%0AContacto%3A%20___%0AN%C2%BA%20clientes%20activos%3A%20___"
               style={{...S.button, textDecoration:"none"}}
             >
               Solicitar acceso
             </a>
             <a
-              href="mailto:online.lmg28@gmail.com?subject=Demos%20EnergIA&body=Quiero%20ver%20una%20demo%20con%20nuestros%20datos."
-              style={{...S.button, textDecoration:"none"}}
+              href="mailto:online.lmg28@gmail.com?subject=Demo%20ENERGIA%20Analytics&body=Quiero%20ver%20una%20demo%20con%20nuestros%20datos."
+              style={{...S.buttonGhost, textDecoration:"none"}}
             >
               Pedir demo con mis datos
             </a>
           </div>
         </div>
 
-        <div style={{...S.muted, textAlign:"center", paddingTop:12}}>EnergIA – MVP demo. CSV mínimo: datetime, load_kwh.</div>
+        <div style={{...S.muted, textAlign:"center", paddingTop:12}}>ENERGIA Analytics — CSV mínimo: datetime, load_kwh.</div>
       </div>
     </div>
   );
@@ -355,6 +373,16 @@ function Metric({ title, value }){
     <div style={{padding:14,borderRadius:16,background:"#fff",border:"1px solid #e6e8ef",boxShadow:"0 1px 8px rgba(0,0,0,.04)"}}>
       <div style={{fontSize:11,opacity:.7,textTransform:"uppercase"}}>{title}</div>
       <div style={{fontSize:22,fontWeight:800,marginTop:4}}>{value}</div>
+    </div>
+  );
+}
+
+function Plan({ name, users, price }){
+  return (
+    <div style={{border:"1px solid #e6e8ef", borderRadius:12, padding:12}}>
+      <div style={{fontWeight:800}}>{name}</div>
+      <div style={{opacity:.65, fontSize:12}}>{users}</div>
+      <div style={{fontSize:22, fontWeight:900, margin:"6px 0"}}>{price}</div>
     </div>
   );
 }
