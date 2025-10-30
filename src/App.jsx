@@ -166,27 +166,43 @@ export default function App(){
   return (
     <div style={S.page}>
       <div style={S.container}>
+        {/* ===== HEADER con branding + botones ===== */}
         <div style={S.header}>
-          <h1 style={S.h1}>EnergIA</h1>
-          <button style={S.button} onClick={()=>{
-            // Datos sintéticos de ejemplo (48 horas)
-            const now = new Date();
-            const start = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-            const rows = Array.from({length:48}, (_,i)=>{
-              const dt = new Date(start.getTime() + i*3600*1000);
-              const h = dt.getHours();
-              const pv = Math.max(0, 3*Math.exp(-((h-13)**2)/(2*3.5**2)) + (Math.random()*0.2-0.1));
-              const base = 0.6 + 0.15*Math.sin(h/24*2*Math.PI);
-              const morning = 0.8*Math.exp(-((h-9)**2)/(2*2));
-              const evening = 1.2*Math.exp(-((h-20)**2)/(2*2.5));
-              const load = Math.max(0.3, base+morning+evening + (Math.random()*0.2-0.1));
-              const price = 0.14 + (h>=19&&h<=23?0.08:0) + (h>=2&&h<=5?-0.03:0) + (Math.random()*0.01-0.005);
-              return { datetime: dt, load_kwh: +load.toFixed(3), pv_kwh: +pv.toFixed(3), price_eur_per_kwh: +price.toFixed(3)};
-            });
-            setRows(rows);
-          }}>Cargar datos de ejemplo</button>
+          <h1 style={S.h1}>🔧 ENERGIA <span style={{fontWeight:600}}> | Auditor Energético Automático 🏭</span></h1>
+          <div style={{display:"flex", gap:8, flexWrap:"wrap"}}>
+            <button style={S.button} onClick={()=>{
+              // Datos sintéticos de ejemplo (48 horas)
+              const now = new Date();
+              const start = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+              const rows = Array.from({length:48}, (_,i)=>{
+                const dt = new Date(start.getTime() + i*3600*1000);
+                const h = dt.getHours();
+                const pv = Math.max(0, 3*Math.exp(-((h-13)**2)/(2*3.5**2)) + (Math.random()*0.2-0.1));
+                const base = 0.6 + 0.15*Math.sin(h/24*2*Math.PI);
+                const morning = 0.8*Math.exp(-((h-9)**2)/(2*2));
+                const evening = 1.2*Math.exp(-((h-20)**2)/(2*2.5));
+                const load = Math.max(0.3, base+morning+evening + (Math.random()*0.2-0.1));
+                const price = 0.14 + (h>=19&&h<=23?0.08:0) + (h>=2&&h<=5?-0.03:0) + (Math.random()*0.01-0.005);
+                return { datetime: dt, load_kwh: +load.toFixed(3), pv_kwh: +pv.toFixed(3), price_eur_per_kwh: +price.toFixed(3)};
+              });
+              setRows(rows);
+            }}>Cargar datos de ejemplo</button>
+
+            <button style={S.button} onClick={()=>{
+              const el = document.getElementById("instaladores");
+              if (el) el.scrollIntoView({behavior:"smooth"});
+            }}>Panel instaladores</button>
+
+            <a
+              href="mailto:online.lmg28@gmail.com?subject=Solicitud%20de%20acceso%20EnergIA&body=Hola%2C%20quiero%20probar%20EnergIA%20para%20mis%20clientes.%20Empresa%3A%20___%20%7C%20N%C2%BA%20instalaciones%20al%20a%C3%B1o%3A%20___"
+              style={{...S.button, textDecoration:"none", display:"inline-block"}}
+            >
+              Solicitar acceso
+            </a>
+          </div>
         </div>
 
+        {/* ===== FORM / INGESTA ===== */}
         <div style={S.card}>
           <div style={S.grid}>
             <div>
@@ -200,15 +216,17 @@ export default function App(){
           </div>
         </div>
 
+        {/* ===== CSV UPLOAD ===== */}
         <div style={S.card}>
           <div style={{marginBottom:8, ...S.muted}}>Sube tu CSV (mínimo: <code>datetime, load_kwh</code>)</div>
           <FileDrop onFile={async(f)=>{
             const parsed = await parseCSV(f);
             setRows(parsed);
           }}/>
-          <div style={{marginTop:8, ...S.muted}}>Opcionales: <code>pv_kwh</code>, <code>price_eur_per_kwh</code>. Coma o punto y coma. Si traes Wh se interpreta como kWh si es posible.</div>
+          <div style={{marginTop:8, ...S.muted}}>Opcionales: <code>pv_kwh</code>, <code>price_eur_per_kwh</code>. Coma o punto y coma.</div>
         </div>
 
+        {/* ===== DASHBOARD ===== */}
         <div style={S.card}>
           {!kpis ? (
             <div style={S.muted}>Sube datos o usa “Cargar datos de ejemplo” para ver el dashboard.</div>
@@ -262,6 +280,7 @@ export default function App(){
           )}
         </div>
 
+        {/* ===== PDF ===== */}
         <div style={S.card}>
           {!kpis ? (
             <div style={S.muted}>Sube datos o usa los datos de ejemplo para generar el PDF.</div>
@@ -273,6 +292,56 @@ export default function App(){
               </button>
             </>
           )}
+        </div>
+
+        {/* ===== LANDING INSTALADORES ===== */}
+        <div id="instaladores" style={{...S.card, marginTop:24}}>
+          <h2 style={{marginTop:0}}>Panel para instaladores</h2>
+          <p style={S.muted}>
+            Servicio profesional para instaladores solares y de climatización. Dashboard automático + informe PDF mensual
+            listo para enviar al cliente. Marca blanca disponible.
+          </p>
+
+          <ul style={{margin:"8px 0 12px 18px"}}>
+            <li>🔧 Reduce soporte post-instalación (el informe responde dudas).</li>
+            <li>🏭 Detecta consumos fuera de horario y oportunidades de ahorro.</li>
+            <li>☀️ Calcula autoconsumo, excedentes y recomendación de batería.</li>
+            <li>📄 PDF mensual automático con KPIs y acciones recomendadas.</li>
+            <li>💶 Nuevo ingreso recurrente por cliente (tu servicio post-venta).</li>
+          </ul>
+
+          <div style={{display:"grid", gap:12, gridTemplateColumns:"repeat(auto-fit,minmax(220px,1fr))"}}>
+            <div style={{border:"1px solid #e6e8ef", borderRadius:12, padding:12}}>
+              <div style={{fontWeight:700}}>Starter</div>
+              <div style={{...S.muted}}>Hasta 10 clientes</div>
+              <div style={{fontSize:22, fontWeight:800, margin:"6px 0"}}>49 €/mes</div>
+            </div>
+            <div style={{border:"1px solid #e6e8ef", borderRadius:12, padding:12}}>
+              <div style={{fontWeight:700}}>Pro</div>
+              <div style={{...S.muted}}>Hasta 50 clientes</div>
+              <div style={{fontSize:22, fontWeight:800, margin:"6px 0"}}>99 €/mes</div>
+            </div>
+            <div style={{border:"1px solid #e6e8ef", borderRadius:12, padding:12}}>
+              <div style={{fontWeight:700}}>Partner</div>
+              <div style={{...S.muted}}>Hasta 200 clientes</div>
+              <div style={{fontSize:22, fontWeight:800, margin:"6px 0"}}>199 €/mes</div>
+            </div>
+          </div>
+
+          <div style={{marginTop:14, display:"flex", gap:8, flexWrap:"wrap"}}>
+            <a
+              href="mailto:online.lmg28@gmail.com?subject=Alta%20instalador%20EnergIA&body=Empresa%3A%20___%0AContacto%3A%20___%0AN%C2%BA%20clientes%20activos%3A%20___"
+              style={{...S.button, textDecoration:"none"}}
+            >
+              Solicitar acceso
+            </a>
+            <a
+              href="mailto:online.lmg28@gmail.com?subject=Demos%20EnergIA&body=Quiero%20ver%20una%20demo%20con%20nuestros%20datos."
+              style={{...S.button, textDecoration:"none"}}
+            >
+              Pedir demo con mis datos
+            </a>
+          </div>
         </div>
 
         <div style={{...S.muted, textAlign:"center", paddingTop:12}}>EnergIA – MVP demo. CSV mínimo: datetime, load_kwh.</div>
