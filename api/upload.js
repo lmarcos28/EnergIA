@@ -1,10 +1,7 @@
 
-// api/upload.js
 import { put } from "@vercel/blob";
 
-export const config = {
-  runtime: "edge",
-};
+export const config = { runtime: "edge" };
 
 export default async function handler(req) {
   if (req.method !== "POST") {
@@ -13,7 +10,6 @@ export default async function handler(req) {
 
   const form = await req.formData();
   const files = form.getAll("files");
-
   if (!files.length) {
     return new Response(JSON.stringify({ error: "No files sent" }), {
       status: 400,
@@ -22,12 +18,11 @@ export default async function handler(req) {
   }
 
   const uploads = [];
-
   for (const file of files) {
     const safeName = file.name.replace(/\s+/g, "_");
     const { url } = await put(`uploads/${Date.now()}_${safeName}`, file, {
       access: "public",
-      token: process.env.BLOB_READ_WRITE_TOKEN,
+      // No hace falta token aquí: Vercel creó BLOB_READ_WRITE_TOKEN automáticamente
     });
     uploads.push(url);
   }
